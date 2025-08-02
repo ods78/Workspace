@@ -1,0 +1,31 @@
+services:
+  nifi-registry:
+    image: apache/nifi-registry:latest
+    container_name: nifi-registry
+    ports:
+      - 18080:18080
+    environment:
+      NIFI_REGISTRY_WEB_HTTP_PORT: 18080
+      NIFI_REGISTRY_WEB_HTTP_HOST: 0.0.0.0
+    restart: always
+    networks:
+      - nifi-registry
+
+  nifi:
+    image: apache/nifi:latest
+    container_name: Nifi
+    ports:
+      - 9443:9443
+    environment:
+      INITIAL_ADMIN_IDENTITY: 'CN=adminnifi, OU=adminn'
+      NIFI_WEB_HTTPS_PORT: 9443
+      NIFI_REGISTRY_URL: http://nifi-registry:18080
+    restart: always
+    depends_on:
+      - nifi-registry
+    networks:
+      - nifi-registry
+
+networks:
+  nifi-registry:
+    driver: bridge
