@@ -1,0 +1,23 @@
+services:
+  postgresql:
+    image: postgres:15  # Specify the PostgreSQL version
+    container_name: postgresql
+    ports:
+      - "5432:5432"  # Host:Container
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 246810@dmin
+      POSTGRES_DB: dremio_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - iceberg_env
+
+networks:
+  default:
+    name: iceberg_env
+    driver: bridge
+    external: true
+volumes:
+  postgres_data:
+    driver: local
