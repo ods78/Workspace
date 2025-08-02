@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  dremio:
+    platform: linux/x86_64
+    image: dremio/dremio-oss:latest
+    ports:
+      - 9047:9047
+      - 31010:31010
+      - 32010:32010
+    container_name: dremio
+  minioserver:
+    image: minio/minio
+    ports:
+      - 9005:9000
+      - 9006:9001
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    container_name: minio
+    command: server /data --console-address ":9001" 
+  nessie:
+    image: projectnessie/nessie
+    container_name: nessie
+    ports:
+      - "19120:19120"
+  postgresql:
+    image: postgres:15  # Specify the PostgreSQL version
+    container_name: postgresql
+    ports:
+      - "5432:5432"  # Host:Container
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 246810@dmin
+      POSTGRES_DB: dremio_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+volumes:
+  postgres_data:
+    driver: local
+networks:
+  default:
+    name: dremio_network
+    driver: bridge
