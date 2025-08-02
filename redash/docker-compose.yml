@@ -1,0 +1,86 @@
+version: '3'
+
+services:
+  server:
+    image: redash/redash:latest
+    container_name: redash_server
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "5000:5000"
+    environment:
+      REDASH_COOKIE_SECRET: verylogsecretkey
+      REDASH_SECRET_KEY: c292a0a3aa32997e2b0f6b454cd553ed478be6f5
+      REDASH_LOG_LEVEL: "DEBUG"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
+    restart: always
+    volumes:
+      - redash-data:/app
+    networks:
+      - redash-network
+      
+  worker:
+    image: redash/redash:latest
+    container_name: redash_worker
+    depends_on:
+      - server
+    environment:
+      REDASH_COOKIE_SECRET: verylogsecretkey
+      REDASH_SECRET_KEY: c292a0a3aa32997e2b0f6b454cd553ed478be6f5
+      REDASH_LOG_LEVEL: "DEBUG"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_DATABASE_URL: "postgresql://postgres:postgres@postgres/postgres"
+      QUEUES: "queries,scheduled_queries,celery"
+      WORKERS_COUNT: 2
+    restart: always
+    command: scheduler
+    volumes:
+      - redash-data:/app
+    networks:
+      - redash-network
+      
+  redis:
+    image: redis:6-alpine
+    container_name: redash_redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    networks:
+      - redash-network
+
+  postgres:
+    image: postgres:13-alpine
+    container_name: redash_postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - redash-network
+
+  nginx:
+    image: redash/nginx:latest
+    container_name: redash_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    links:
+      - server:redash
+    restart: always
+    networks:
+      - redash-network
+
+volumes:
+  redis-data:
+  postgres-data:
+  redash-data:
+
+networks:
+  redash-network:
+    driver: bridge
