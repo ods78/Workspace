@@ -1,0 +1,69 @@
+ubuntu@n8n:~/minio$ curl https://dl.min.io/client/mc/release/linux-amd64/mc \
+  --create-dirs \
+  -o $HOME/minio-binaries/mc
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 29.1M  100 29.1M    0     0  6437k      0  0:00:04  0:00:04 --:--:-- 7028k
+ubuntu@n8n:~/minio$ chmod +x $HOME/minio-binaries/mc
+ubuntu@n8n:~/minio$ export PATH=$PATH:$HOME/minio-binaries/
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc alias set myminio http://localhost:9000 minioadmin minioadmin123
+mc: Configuration written to `/home/ubuntu/.mc/config.json`. Please update your access credentials.
+mc: Successfully created `/home/ubuntu/.mc/share`.
+mc: Initialized share uploads `/home/ubuntu/.mc/share/uploads.json` file.
+mc: Initialized share downloads `/home/ubuntu/.mc/share/downloads.json` file.
+Added `myminio` successfully.
+ubuntu@n8n:~/minio$ alias minio-mc="$HOME/minio-binaries/mc"
+ubuntu@n8n:~/minio$ minio-mc alias set myminio http://localhost:9000 minioadmin minioadmin123
+Added `myminio` successfully.
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin user add myminio rasoul rasoul123
+Added user `rasoul` successfully.
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin user list myminio
+enabled    rasoul
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin user svcacct add myminio rasoul
+Access Key: R6Z06607CQIR63ZKL7AT
+Secret Key: Fz7+s0Os5S8UJz5vR4f6FbJbm2zfshVLxedVyH09
+Expiration: no-expiry
+ubuntu@n8n:~/minio$ cat > bucket-create-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::*"
+      ]
+    }
+  ]
+}
+EOF
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin policy add myminio bucket-creator bucket-create-policy.json
+mc: <ERROR> Deprecated command. Please use 'mc admin policy create' instead.
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin policy create myminio bucket-creator bucket-create-policy.json
+Created policy `bucket-creator` successfully.
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin policy attach myminio bucket-creator --user rasoul
+Attached Policies: [bucket-creator]
+To User: rasoul
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin user info myminio rasoul
+AccessKey: rasoul
+Status: enabled
+PolicyName: bucket-creator
+MemberOf: []
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin policy list myminio
+writeonly
+bucket-creator
+consoleAdmin
+diagnostics
+readonly
+readwrite
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc admin policy attach myminio readwrite --user rasoul
+Attached Policies: [readwrite]
+To User: rasoul
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc alias set rasoul-test http://localhost:9000 R6Z06607CQIR63ZKL7AT Fz7+s0Os5S8UJz5vR4f6FbJbm2zfshVLxedVyH09
+Added `rasoul-test` successfully.
+ubuntu@n8n:~/minio$ $HOME/minio-binaries/mc mb rasoul-test/test-bucket
+Bucket created successfully `rasoul-test/test-bucket`.
